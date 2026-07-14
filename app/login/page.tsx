@@ -17,7 +17,7 @@ export default function LoginPage() {
   })
 
   const onSubmit = async (data: FormData) => {
-    await signIn('nodemailer', { email: data.email, redirect: false, callbackUrl: '/' })
+    await signIn('resend', { email: data.email, redirect: false, callbackUrl: '/' })
     setSent(true)
   }
 
