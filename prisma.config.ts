@@ -1,7 +1,9 @@
-import { defineConfig } from 'prisma/config'
+import { defineConfig, env } from 'prisma/config'
 
-// Prisma 7: connection URL is provided at runtime via DATABASE_URL env var
-// The adapter is configured in lib/db.ts for the Prisma Client
+// Prisma 7: connection URL is provided here instead of schema.prisma
 export default defineConfig({
   schema: 'prisma/schema.prisma',
+  datasource: {
+    url: env("DATABASE_URL"),
+  },
 })

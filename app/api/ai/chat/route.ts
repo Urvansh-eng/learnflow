@@ -9,6 +9,7 @@ import { createResource } from '@/lib/services/resources'
 import { createEvent } from '@/lib/services/events'
 import { getWeeklySummary, getCurrentStreak } from '@/lib/services/progress'
 import { prisma } from '@/lib/db'
+import { Column, Task } from '@prisma/client'
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!)
 
@@ -132,7 +133,7 @@ async function executeTool(userId: string, name: string, args: Record<string, an
         include: { columns: true },
       })
       if (!board) return { error: 'No board found. Create a board first.' }
-      let column = board.columns.find((c) =>
+      let column = board.columns.find((c: Column) =>
         c.name.toLowerCase().includes((args.columnName ?? 'to do').toLowerCase())
       ) ?? board.columns[0]
       const task = await createTask({
@@ -156,7 +157,7 @@ async function executeTool(userId: string, name: string, args: Record<string, an
       for (const board of boards) {
         for (const col of board.columns) {
           if (!foundTask) {
-            foundTask = col.tasks.find((t) => t.title.toLowerCase().includes(args.taskTitle.toLowerCase()))
+            foundTask = col.tasks.find((t: Task) => t.title.toLowerCase().includes(args.taskTitle.toLowerCase()))
           }
           if (!targetColumn && col.name.toLowerCase().includes(args.newColumnName.toLowerCase())) {
             targetColumn = col
