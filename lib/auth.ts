@@ -8,7 +8,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Resend({
       from: process.env.EMAIL_FROM,
-      // NextAuth automatically looks for process.env.AUTH_RESEND_KEY 
+      apiKey: process.env.AUTH_RESEND_KEY || process.env.RESEND_API_KEY,
     }),
   ],
   pages: {
