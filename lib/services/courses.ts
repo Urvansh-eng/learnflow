@@ -58,14 +58,14 @@ function getNextLesson(modules: { lessons: any[] }[]) {
   return null
 }
 
-export async function createCourse(userId: string, data: CreateCourseInput & { url?: string }) {
+export async function createCourse(userId: string, data: CreateCourseInput) {
   return prisma.course.create({
     data: { userId, ...data },
     include: { modules: { include: { lessons: true } } },
   })
 }
 
-export async function updateCourse(courseId: string, userId: string, data: Partial<CreateCourseInput & { url?: string }>) {
+export async function updateCourse(courseId: string, userId: string, data: Partial<CreateCourseInput>) {
   return prisma.course.updateMany({
     where: { id: courseId, userId },
     data,
