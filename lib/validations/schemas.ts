@@ -38,6 +38,7 @@ export type MoveTaskInput = z.infer<typeof moveTaskSchema>
 
 export const createCourseSchema = z.object({
   title: z.string().min(1, 'Course title is required').max(200),
+  url: z.string().url().optional().nullable(),
   platform: z.string().max(1000).optional(),
   category: z.string().max(1000).optional(),
 })
@@ -46,15 +47,27 @@ export const createModuleSchema = z.object({
   courseId: z.string().cuid(),
   title: z.string().min(1, 'Module title is required').max(200),
   order: z.number().int().min(0).optional(),
-  resumeUrl: z.string().url().optional().nullable(),
-  notes: z.string().optional(),
 })
 
 export const updateModuleSchema = createModuleSchema.partial().omit({ courseId: true })
 
+export const createLessonSchema = z.object({
+  moduleId: z.string().cuid(),
+  title: z.string().min(1, 'Lesson title is required').max(200),
+  url: z.string().url().optional().nullable(),
+  order: z.number().int().min(0).optional(),
+  notes: z.string().optional(),
+})
+
+export const updateLessonSchema = createLessonSchema.partial().omit({ moduleId: true }).extend({
+  completed: z.boolean().optional(),
+})
+
 export type CreateCourseInput = z.infer<typeof createCourseSchema>
 export type CreateModuleInput = z.infer<typeof createModuleSchema>
 export type UpdateModuleInput = z.infer<typeof updateModuleSchema>
+export type CreateLessonInput = z.infer<typeof createLessonSchema>
+export type UpdateLessonInput = z.infer<typeof updateLessonSchema>
 
 // ─── Certificate ──────────────────────────────────────────────────────────────
 

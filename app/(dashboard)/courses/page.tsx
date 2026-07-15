@@ -2,47 +2,46 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Plus, ExternalLink, Trash2, ChevronDown, ChevronRight, CheckCircle, Circle, Loader2 } from 'lucide-react'
+import { BookOpen, Plus, ExternalLink, Trash2, ChevronRight, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { cn } from '@/lib/utils'
+import Link from 'next/link'
+
+interface Lesson {
+  id: string
+  title: string
+  completed: boolean
+  url?: string | null
+}
 
 interface Module {
   id: string
   title: string
-  order: number
-  resumeUrl?: string | null
-  completed: boolean
-  notes?: string | null
+  lessons: Lesson[]
 }
 
 interface Course {
   id: string
   title: string
+  url?: string | null
   platform?: string
   category?: string
   progress: number
   modules: Module[]
-  nextModule?: Module | null
+  nextLesson?: Lesson | null
 }
 
 const courseSchema = z.object({
   title: z.string().min(1),
+  url: z.string().url().optional().or(z.literal('')),
   platform: z.string().optional(),
   category: z.string().optional(),
-})
-
-const moduleSchema = z.object({
-  title: z.string().min(1),
-  resumeUrl: z.string().url().optional().or(z.literal('')),
 })
 
 export default function CoursesPage() {
   const qc = useQueryClient()
   const [addCourseOpen, setAddCourseOpen] = useState(false)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [addModuleCourseId, setAddModuleCourseId] = useState<string | null>(null)
 
   const { data: courses = [], isLoading } = useQuery<Course[]>({
     queryKey: ['courses'],
@@ -50,26 +49,12 @@ export default function CoursesPage() {
   })
 
   const courseForm = useForm({ resolver: zodResolver(courseSchema) })
-  const moduleForm = useForm({ resolver: zodResolver(moduleSchema) })
 
   const createCourseMutation = useMutation({
     mutationFn: (data: any) =>
-      fetch('/api/courses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() }),
+      fetch('/api/courses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, url: data.url || null }) }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); setAddCourseOpen(false); courseForm.reset() },
     onError: (e) => alert('Failed to create course: ' + e.message)
-  })
-
-  const createModuleMutation = useMutation({
-    mutationFn: ({ courseId, ...data }: any) =>
-      fetch('/api/modules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ courseId, ...data, resumeUrl: data.resumeUrl || null }) }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); setAddModuleCourseId(null); moduleForm.reset() },
-    onError: (e) => alert('Failed to create module: ' + e.message)
-  })
-
-  const toggleModuleMutation = useMutation({
-    mutationFn: ({ moduleId, completed }: { moduleId: string; completed: boolean }) =>
-      fetch(`/api/modules/${moduleId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completed }) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['courses'] }),
   })
 
   const deleteCourseMutation = useMutation({
@@ -87,7 +72,6 @@ export default function CoursesPage() {
           <p className="text-muted-foreground text-sm mt-0.5">{courses.length} courses tracked</p>
         </div>
         <button
-          id="add-course-btn"
           onClick={() => setAddCourseOpen(true)}
           className="gradient-bg text-white rounded-xl px-4 py-2 text-sm font-medium flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all duration-200"
         >
@@ -95,7 +79,6 @@ export default function CoursesPage() {
         </button>
       </div>
 
-      {/* Add Course Modal */}
       {addCourseOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setAddCourseOpen(false)} />
@@ -104,6 +87,7 @@ export default function CoursesPage() {
             <form onSubmit={courseForm.handleSubmit((d) => createCourseMutation.mutate(d))} className="space-y-4">
               {[
                 { name: 'title', placeholder: 'Course title *', required: true },
+                { name: 'url', placeholder: 'Main course URL (optional)', required: false },
                 { name: 'platform', placeholder: 'Platform (e.g. Udemy, Code with Harry)', required: false },
                 { name: 'category', placeholder: 'Category (e.g. Web Dev, DSA)', required: false },
               ].map(({ name, placeholder }) => (
@@ -127,7 +111,6 @@ export default function CoursesPage() {
         </div>
       )}
 
-      {/* Course list */}
       {courses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4 glass rounded-2xl">
           <BookOpen className="w-12 h-12 text-muted-foreground/30" />
@@ -138,16 +121,13 @@ export default function CoursesPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {courses.map((course) => (
-            <div key={course.id} className="glass rounded-2xl overflow-hidden">
-              {/* Course header */}
-              <div
-                className="flex items-center gap-4 p-5 cursor-pointer hover:bg-secondary/20 transition-colors"
-                onClick={() => setExpandedId(expandedId === course.id ? null : course.id)}
-              >
-                <div className="flex-1 min-w-0">
+          {courses.map((course) => {
+            const openUrl = course.nextLesson?.url || course.url || null
+            return (
+              <div key={course.id} className="glass rounded-2xl p-5 hover:bg-secondary/10 transition-colors flex items-center gap-4">
+                <Link href={`/courses/${course.id}`} className="flex-1 min-w-0 group cursor-pointer block">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold truncate">{course.title}</h3>
+                    <h3 className="font-semibold truncate group-hover:text-primary transition-colors">{course.title}</h3>
                     {course.category && (
                       <span className="text-xs bg-primary/15 text-primary rounded-full px-2 py-0.5 flex-shrink-0">{course.category}</span>
                     )}
@@ -159,91 +139,34 @@ export default function CoursesPage() {
                     </div>
                     <span className="text-sm font-medium text-primary flex-shrink-0">{course.progress}%</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {course.modules.filter((m) => m.completed).length} / {course.modules.length} modules complete
-                  </p>
-                </div>
+                </Link>
                 <div className="flex items-center gap-2">
-                  {course.nextModule?.resumeUrl && (
+                  {openUrl && (
                     <a
-                      href={course.nextModule.resumeUrl}
+                      href={openUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1.5 gradient-bg text-white text-xs rounded-lg px-3 py-2 hover:opacity-90 transition-opacity flex-shrink-0"
+                      className="flex items-center gap-1.5 gradient-bg text-white text-sm rounded-lg px-4 py-2.5 hover:opacity-90 transition-opacity flex-shrink-0"
                     >
-                      Continue <ExternalLink className="w-3 h-3" />
+                      {course.nextLesson?.url ? 'Resume' : 'Open Course'} <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   )}
                   <button
-                    onClick={(e) => { e.stopPropagation(); if (confirm('Delete course?')) deleteCourseMutation.mutate(course.id) }}
-                    className="p-2 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    onClick={() => { if (confirm('Delete course?')) deleteCourseMutation.mutate(course.id) }}
+                    className="p-2.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  {expandedId === course.id ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                  <Link href={`/courses/${course.id}`} className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                    <ChevronRight className="w-5 h-5" />
+                  </Link>
                 </div>
               </div>
-
-              {/* Modules */}
-              {expandedId === course.id && (
-                <div className="border-t border-border/50">
-                  {course.modules.map((mod) => (
-                    <div key={mod.id} className="flex items-center gap-3 px-5 py-3 border-b border-border/30 last:border-0 hover:bg-secondary/10 transition-colors">
-                      <button
-                        onClick={() => toggleModuleMutation.mutate({ moduleId: mod.id, completed: !mod.completed })}
-                        className={cn('flex-shrink-0 transition-colors', mod.completed ? 'text-green-400' : 'text-muted-foreground hover:text-primary')}
-                      >
-                        {mod.completed ? <CheckCircle className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
-                      </button>
-                      <span className={cn('flex-1 text-sm', mod.completed && 'line-through text-muted-foreground')}>{mod.title}</span>
-                      {mod.resumeUrl && (
-                        <a href={mod.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 flex-shrink-0">
-                          <ExternalLink className="w-3 h-3" /> Resume
-                        </a>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Add module */}
-                  {addModuleCourseId === course.id ? (
-                    <form
-                      onSubmit={moduleForm.handleSubmit((d) => createModuleMutation.mutate({ courseId: course.id, ...d }))}
-                      className="flex gap-2 p-4"
-                    >
-                      <input
-                        {...moduleForm.register('title')}
-                        autoFocus
-                        placeholder="Module title *"
-                        className="flex-1 bg-secondary/50 border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      />
-                      <input
-                        {...moduleForm.register('resumeUrl')}
-                        placeholder="Resume URL (optional)"
-                        className="flex-1 bg-secondary/50 border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      />
-                      <button type="submit" disabled={createModuleMutation.isPending} className="gradient-bg text-white rounded-xl px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-60">
-                        Add
-                      </button>
-                      <button type="button" onClick={() => setAddModuleCourseId(null)} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-xl hover:bg-secondary">
-                        ✕
-                      </button>
-                    </form>
-                  ) : (
-                    <button
-                      id={`add-module-${course.id}`}
-                      onClick={() => setAddModuleCourseId(course.id)}
-                      className="flex items-center gap-2 w-full px-5 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/20 transition-colors"
-                    >
-                      <Plus className="w-4 h-4" /> Add Module
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
   )
 }
+

@@ -12,8 +12,6 @@ export async function createModule(data: CreateModuleInput) {
       courseId: data.courseId,
       title: data.title,
       order: data.order ?? (maxOrder?.order ?? -1) + 1,
-      resumeUrl: data.resumeUrl ?? null,
-      notes: data.notes ?? null,
     },
   })
 }
@@ -23,22 +21,6 @@ export async function updateModule(moduleId: string, data: UpdateModuleInput) {
     where: { id: moduleId },
     data,
   })
-}
-
-export async function toggleModuleComplete(moduleId: string, userId: string, completed: boolean) {
-  const mod = await prisma.courseModule.update({
-    where: { id: moduleId },
-    data: { completed },
-  })
-
-  // Log activity for streak tracking
-  if (completed) {
-    await prisma.activityLog.create({
-      data: { userId, type: 'module_complete', refId: moduleId },
-    })
-  }
-
-  return mod
 }
 
 export async function deleteModule(moduleId: string) {

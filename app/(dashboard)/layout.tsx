@@ -10,12 +10,12 @@ import {
   Award,
   Link2,
   Calendar,
+  Settings,
   Bot,
   LogOut,
   Sparkles,
   ChevronRight,
   Menu,
-  X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -28,6 +28,7 @@ const navItems = [
   { href: '/certificates', icon: Award, label: 'Certificates' },
   { href: '/resources', icon: Link2, label: 'Resources' },
   { href: '/calendar', icon: Calendar, label: 'Calendar' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {

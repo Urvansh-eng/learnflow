@@ -3,7 +3,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter'
 import Resend from 'next-auth/providers/resend'
 import { prisma } from '@/lib/db'
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, signIn, signOut, auth: nextAuthAuth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
     Resend({
@@ -28,3 +28,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 })
+
+export const auth = async () => {
+  let user = await prisma.user.findFirst({ where: { email: 'dev@local.host' } })
+  if (!user) {
+    user = await prisma.user.create({
+      data: { email: 'dev@local.host', name: 'Dev User' }
+    })
+  }
+  return {
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    },
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  }
+}

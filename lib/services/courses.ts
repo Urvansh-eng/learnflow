@@ -7,6 +7,7 @@ export async function getCourses(userId: string) {
     include: {
       modules: {
         orderBy: { order: 'asc' },
+        include: { lessons: { orderBy: { order: 'asc' } } }
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -15,7 +16,7 @@ export async function getCourses(userId: string) {
   return courses.map((course) => ({
     ...course,
     progress: computeProgress(course.modules),
-    nextModule: course.modules.find((m) => !m.completed) ?? null,
+    nextLesson: getNextLesson(course.modules),
   }))
 }
 
@@ -23,7 +24,10 @@ export async function getCourse(courseId: string, userId: string) {
   const course = await prisma.course.findFirst({
     where: { id: courseId, userId },
     include: {
-      modules: { orderBy: { order: 'asc' } },
+      modules: { 
+        orderBy: { order: 'asc' },
+        include: { lessons: { orderBy: { order: 'asc' } } }
+      },
       resources: true,
     },
   })
@@ -31,24 +35,37 @@ export async function getCourse(courseId: string, userId: string) {
   return {
     ...course,
     progress: computeProgress(course.modules),
-    nextModule: course.modules.find((m) => !m.completed) ?? null,
+    nextLesson: getNextLesson(course.modules),
   }
 }
 
-export function computeProgress(modules: { completed: boolean }[]): number {
-  if (modules.length === 0) return 0
-  const completed = modules.filter((m) => m.completed).length
-  return Math.round((completed / modules.length) * 100)
+export function computeProgress(modules: { lessons: { completed: boolean }[] }[]): number {
+  let totalLessons = 0
+  let completedLessons = 0
+  for (const mod of modules) {
+    totalLessons += mod.lessons.length
+    completedLessons += mod.lessons.filter((l) => l.completed).length
+  }
+  if (totalLessons === 0) return 0
+  return Math.round((completedLessons / totalLessons) * 100)
 }
 
-export async function createCourse(userId: string, data: CreateCourseInput) {
+function getNextLesson(modules: { lessons: any[] }[]) {
+  for (const mod of modules) {
+    const incomplete = mod.lessons.find((l) => !l.completed)
+    if (incomplete) return incomplete
+  }
+  return null
+}
+
+export async function createCourse(userId: string, data: CreateCourseInput & { url?: string }) {
   return prisma.course.create({
     data: { userId, ...data },
-    include: { modules: true },
+    include: { modules: { include: { lessons: true } } },
   })
 }
 
-export async function updateCourse(courseId: string, userId: string, data: Partial<CreateCourseInput>) {
+export async function updateCourse(courseId: string, userId: string, data: Partial<CreateCourseInput & { url?: string }>) {
   return prisma.course.updateMany({
     where: { id: courseId, userId },
     data,

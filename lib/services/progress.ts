@@ -44,20 +44,20 @@ export async function getWeeklySummary(userId: string) {
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }) // Monday
   const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 })
 
-  const [tasksCompleted, modulesCompleted, resourcesSaved, courses] = await Promise.all([
+  const [tasksCompleted, lessonsCompleted, resourcesSaved, courses] = await Promise.all([
     // Tasks moved to "Done"-like columns this week — approximate by completedAt
     prisma.activityLog.count({
       where: { userId, type: 'task_complete', date: { gte: weekStart, lte: weekEnd } },
     }),
     prisma.activityLog.count({
-      where: { userId, type: 'module_complete', date: { gte: weekStart, lte: weekEnd } },
+      where: { userId, type: 'lesson_complete', date: { gte: weekStart, lte: weekEnd } },
     }),
     prisma.activityLog.count({
       where: { userId, type: 'resource_saved', date: { gte: weekStart, lte: weekEnd } },
     }),
     prisma.course.findMany({
       where: { userId },
-      include: { modules: true },
+      include: { modules: { include: { lessons: true } } },
     }),
   ])
 
@@ -67,7 +67,7 @@ export async function getWeeklySummary(userId: string) {
     progress: computeProgress(c.modules),
   }))
 
-  return { tasksCompleted, modulesCompleted, resourcesSaved, courseProgress }
+  return { tasksCompleted, lessonsCompleted, resourcesSaved, courseProgress }
 }
 
 export async function globalSearch(userId: string, query: string) {

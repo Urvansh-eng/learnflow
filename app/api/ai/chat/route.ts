@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { createTask, moveTask, updateTask } from '@/lib/services/tasks'
 import { createCourse } from '@/lib/services/courses'
-import { toggleModuleComplete } from '@/lib/services/modules'
+import { toggleLessonComplete } from '@/lib/services/lessons'
 import { createCert, updateCert } from '@/lib/services/certificates'
 import { createResource } from '@/lib/services/resources'
 import { createEvent, syncTaskToCalendar } from '@/lib/services/events'
@@ -59,15 +59,15 @@ const tools = [
       },
       {
         name: 'update_course_progress',
-        description: 'Mark a course module as completed or not completed',
+        description: 'Mark a course lesson as completed or not completed',
         parameters: {
           type: 'OBJECT',
           properties: {
             courseTitle: { type: 'STRING', description: 'Course title (partial match)' },
-            moduleTitle: { type: 'STRING', description: 'Module title (partial match)' },
+            lessonTitle: { type: 'STRING', description: 'Lesson title (partial match)' },
             completed: { type: 'BOOLEAN' },
           },
-          required: ['courseTitle', 'moduleTitle', 'completed'],
+          required: ['courseTitle', 'lessonTitle', 'completed'],
         },
       },
       {
@@ -182,13 +182,20 @@ async function executeTool(userId: string, name: string, args: Record<string, an
     case 'update_course_progress': {
       const course = await prisma.course.findFirst({
         where: { userId, title: { contains: args.courseTitle, mode: 'insensitive' } },
-        include: { modules: true },
+        include: { modules: { include: { lessons: true } } },
       })
       if (!course) return { error: `Course matching "${args.courseTitle}" not found` }
-      const mod = course.modules.find((m) => m.title.toLowerCase().includes(args.moduleTitle.toLowerCase()))
-      if (!mod) return { error: `Module matching "${args.moduleTitle}" not found` }
-      await toggleModuleComplete(mod.id, userId, args.completed)
-      return { success: true, message: `Module "${mod.title}" marked as ${args.completed ? 'completed' : 'incomplete'}` }
+      
+      let foundLesson: any = null
+      for (const mod of course.modules) {
+        foundLesson = mod.lessons.find((l: any) => l.title.toLowerCase().includes((args.lessonTitle || args.moduleTitle || '').toLowerCase()))
+        if (foundLesson) break
+      }
+      
+      if (!foundLesson) return { error: `Lesson matching "${args.lessonTitle || args.moduleTitle}" not found` }
+      
+      await toggleLessonComplete(foundLesson.id, userId, args.completed)
+      return { success: true, message: `Lesson "${foundLesson.title}" marked as ${args.completed ? 'completed' : 'incomplete'}` }
     }
 
     case 'add_certificate': {
@@ -239,7 +246,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json() as { messages: { role: string; content: string }[] }
 
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-1.5-flash-latest',
     systemInstruction: `You are a smart personal productivity assistant built into a Learning & Task Management app.
 You help the user manage tasks, courses, certificates, resources, and calendar events.
 You have access to tools to create, update, and query data in the app.

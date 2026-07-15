@@ -4,30 +4,33 @@ import { CheckSquare, BookOpen, Link2, TrendingUp } from 'lucide-react'
 
 interface Summary {
   tasksCompleted: number
-  modulesCompleted: number
+  lessonsCompleted: number
   resourcesSaved: number
   courseProgress: { id: string; title: string; progress: number }[]
 }
 
-export function WeeklySummaryCard({ summary }: { summary: Summary }) {
+export function WeeklySummaryCard({ summary }: { summary: Summary | null }) {
+  if (!summary) return <div className="glass rounded-3xl p-6 h-40 animate-pulse"></div>
+
   return (
-    <div className="glass rounded-xl p-5">
-      <h3 className="font-semibold mb-4 flex items-center gap-2">
-        <TrendingUp className="w-4 h-4 text-green-400" />
+    <div className="glass rounded-3xl p-6 relative overflow-hidden group">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <h3 className="font-semibold text-lg flex items-center gap-2 mb-4 relative z-10">
+        <TrendingUp className="w-5 h-5 text-primary" />
         This Week
       </h3>
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="text-center">
+      <div className="grid grid-cols-3 gap-4 relative z-10">
+        <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50 hover:bg-secondary/60 transition-colors">
+          <p className="text-sm text-muted-foreground mb-1">Tasks</p>
           <p className="text-2xl font-bold text-green-400">{summary.tasksCompleted}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Tasks</p>
         </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-indigo-400">{summary.modulesCompleted}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Modules</p>
+        <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50 hover:bg-secondary/60 transition-colors">
+          <p className="text-sm text-muted-foreground mb-1">Lessons</p>
+          <p className="text-2xl font-bold text-indigo-400">{summary.lessonsCompleted}</p>
         </div>
-        <div className="text-center">
+        <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50 hover:bg-secondary/60 transition-colors">
+          <p className="text-sm text-muted-foreground mb-1">Saved</p>
           <p className="text-2xl font-bold text-blue-400">{summary.resourcesSaved}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Saved</p>
         </div>
       </div>
       {summary.courseProgress.slice(0, 3).map((c) => (
