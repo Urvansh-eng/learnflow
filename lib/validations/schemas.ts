@@ -38,8 +38,8 @@ export type MoveTaskInput = z.infer<typeof moveTaskSchema>
 
 export const createCourseSchema = z.object({
   title: z.string().min(1, 'Course title is required').max(200),
-  platform: z.string().max(100).optional(),
-  category: z.string().max(100).optional(),
+  platform: z.string().max(1000).optional(),
+  category: z.string().max(1000).optional(),
 })
 
 export const createModuleSchema = z.object({
@@ -60,7 +60,7 @@ export type UpdateModuleInput = z.infer<typeof updateModuleSchema>
 
 export const createCertificateSchema = z.object({
   title: z.string().min(1, 'Certificate title is required').max(200),
-  provider: z.string().max(100).optional(),
+  provider: z.string().max(1000).optional(),
   status: z.enum(['not_started', 'in_progress', 'completed']).default('not_started'),
   resumeUrl: z.string().url().optional().nullable(),
   targetDate: z.string().datetime().optional().nullable(),
