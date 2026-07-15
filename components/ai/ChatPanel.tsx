@@ -51,10 +51,15 @@ export function ChatPanel({ open, onClose }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages }),
       })
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('AI Chat Failed:', errorData)
+        throw new Error(errorData.details || 'Server returned an error')
+      }
       const data = await res.json()
       setMessages((prev) => [...prev, { role: 'assistant', content: data.message }])
-    } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Oops! Kuch error ho gaya. Please try again. 🙏' }])
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: `Oops! Error: ${err.message || 'Kuch error ho gaya'}` }])
     } finally {
       setLoading(false)
     }
@@ -68,7 +73,7 @@ export function ChatPanel({ open, onClose }: Props) {
       {/* Panel */}
       <div
         className={cn(
-          'fixed right-0 top-0 h-full w-full sm:w-[420px] z-50 flex flex-col glass border-l border-border/50 transition-transform duration-300',
+          'fixed right-0 top-0 h-full w-full sm:w-[420px] z-50 flex flex-col bg-background shadow-2xl border-l border-border transition-transform duration-300',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
       >

@@ -253,34 +253,41 @@ Today's date is ${new Date().toLocaleDateString('en-IN', { weekday: 'long', year
     toolConfig: { function_calling_config: { mode: 'AUTO' } } as any,
   })
 
-  const chat = model.startChat({
-    history: messages.slice(0, -1).map((m) => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }],
-    })),
-  })
+  try {
+    const chat = model.startChat({
+      history: messages.slice(0, -1).map((m) => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }],
+      })),
+    })
 
-  const lastMessage = messages[messages.length - 1]
-  let response = await chat.sendMessage(lastMessage.content)
+    const lastMessage = messages[messages.length - 1]
+    let response = await chat.sendMessage(lastMessage.content)
 
-  // Handle tool calls in a loop (Claude-style multi-step)
-  let iterations = 0
-  while (iterations < 5) {
-    const candidate = response.response.candidates?.[0]
-    const parts = candidate?.content?.parts ?? []
-    const toolCallPart = parts.find((p: any) => p.functionCall)
+    // Handle tool calls in a loop (Claude-style multi-step)
+    let iterations = 0
+    while (iterations < 5) {
+      const candidate = response.response.candidates?.[0]
+      const parts = candidate?.content?.parts ?? []
+      const toolCallPart = parts.find((p: any) => p.functionCall)
 
-    if (!toolCallPart?.functionCall) break
+      if (!toolCallPart?.functionCall) break
 
-    const { name, args } = toolCallPart.functionCall
-    const result = await executeTool(session.user.id, name, args as Record<string, any>)
+      const { name, args } = toolCallPart.functionCall
+      const result = await executeTool(session.user.id, name, args as Record<string, any>)
 
-    response = await chat.sendMessage([
-      { functionResponse: { name, response: result } },
-    ])
-    iterations++
+      response = await chat.sendMessage([
+        { functionResponse: { name, response: result } },
+      ])
+      iterations++
+    }
+
+    const text = response.response.text()
+    return NextResponse.json({ message: text })
+  } catch (error: any) {
+    console.error('================ AI ASSISTANT ERROR ================')
+    console.error(error)
+    console.error('====================================================')
+    return NextResponse.json({ error: 'AI Error', details: error?.message || String(error) }, { status: 500 })
   }
-
-  const text = response.response.text()
-  return NextResponse.json({ message: text })
 }
