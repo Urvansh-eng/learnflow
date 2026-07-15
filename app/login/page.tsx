@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, Sparkles, BookOpen, CheckSquare, Calendar, Brain, Eye, EyeOff } from 'lucide-react'
 
 const features = [
@@ -12,8 +12,17 @@ const features = [
   { icon: Brain, label: 'Hinglish AI', color: 'text-violet-400' },
 ]
 
+const errorMessages: Record<string, string> = {
+  OAuthAccountNotLinked: 'This email is already registered. Sign in with email/password instead.',
+  OAuthCallbackError: 'Google sign-in failed. Please try again.',
+  CredentialsSignin: 'Invalid email or password.',
+  Default: 'Something went wrong. Please try again.',
+}
+
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlError = searchParams.get('error')
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -102,9 +111,15 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="glass rounded-2xl p-8 glow-primary">
-          <h2 className="text-xl font-semibold mb-6">
+          <h2 className="text-xl font-semibold mb-4">
             {mode === 'login' ? 'Welcome back' : 'Create your account'}
           </h2>
+
+          {urlError && (
+            <p className="text-amber-400 text-xs bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-4">
+              {errorMessages[urlError] ?? errorMessages.Default}
+            </p>
+          )}
 
           {/* Google Button */}
           <button
