@@ -45,9 +45,16 @@ export async function updateTask(taskId: string, userId: string, data: UpdateTas
       ...(data.priority !== undefined && { priority: data.priority }),
       ...(data.dueDate !== undefined && { dueDate: data.dueDate ? new Date(data.dueDate) : null }),
       ...(data.showOnCalendar !== undefined && { showOnCalendar: data.showOnCalendar }),
+      ...(data.completedAt !== undefined && { completedAt: data.completedAt ? new Date(data.completedAt) : null }),
     },
     include: { events: true },
   })
+
+  if (!existing.completedAt && data.completedAt) {
+    await prisma.activityLog.create({
+      data: { userId, type: 'task_complete', refId: taskId },
+    })
+  }
 
   // Sync calendar event
   await syncTaskToCalendar(taskId, userId, updated)
@@ -67,10 +74,11 @@ export async function deleteTask(taskId: string) {
 }
 
 export async function getTasksDueToday(userId: string) {
-  const start = new Date()
-  start.setHours(0, 0, 0, 0)
-  const end = new Date()
-  end.setHours(23, 59, 59, 999)
+  const today = new Date()
+  const start = new Date(today)
+  start.setUTCHours(0, 0, 0, 0)
+  const end = new Date(today)
+  end.setUTCHours(23, 59, 59, 999)
 
   return prisma.task.findMany({
     where: {

@@ -6,7 +6,7 @@ import { createCourse } from '@/lib/services/courses'
 import { toggleModuleComplete } from '@/lib/services/modules'
 import { createCert, updateCert } from '@/lib/services/certificates'
 import { createResource } from '@/lib/services/resources'
-import { createEvent } from '@/lib/services/events'
+import { createEvent, syncTaskToCalendar } from '@/lib/services/events'
 import { getWeeklySummary, getCurrentStreak } from '@/lib/services/progress'
 import { prisma } from '@/lib/db'
 import { Column, Task } from '@prisma/client'
@@ -27,6 +27,7 @@ const tools = [
             priority: { type: 'STRING', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'], description: 'Task priority' },
             dueDate: { type: 'STRING', description: 'ISO date string for due date, optional' },
             description: { type: 'STRING', description: 'Task description, optional' },
+            showOnCalendar: { type: 'BOOLEAN', description: 'Whether to show this task on the calendar, optional' },
           },
           required: ['title'],
         },
@@ -142,8 +143,11 @@ async function executeTool(userId: string, name: string, args: Record<string, an
         description: args.description,
         priority: args.priority ?? 'MEDIUM',
         dueDate: args.dueDate ?? null,
-        showOnCalendar: false,
+        showOnCalendar: args.showOnCalendar ?? false,
       })
+      if (task.showOnCalendar && task.dueDate) {
+        await syncTaskToCalendar(task.id, userId, task)
+      }
       return { success: true, task: { id: task.id, title: task.title } }
     }
 

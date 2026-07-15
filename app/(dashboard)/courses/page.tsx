@@ -54,14 +54,16 @@ export default function CoursesPage() {
 
   const createCourseMutation = useMutation({
     mutationFn: (data: any) =>
-      fetch('/api/courses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then((r) => r.json()),
+      fetch('/api/courses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); setAddCourseOpen(false); courseForm.reset() },
+    onError: (e) => alert('Failed to create course: ' + e.message)
   })
 
   const createModuleMutation = useMutation({
     mutationFn: ({ courseId, ...data }: any) =>
-      fetch('/api/modules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ courseId, ...data, resumeUrl: data.resumeUrl || null }) }).then((r) => r.json()),
+      fetch('/api/modules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ courseId, ...data, resumeUrl: data.resumeUrl || null }) }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['courses'] }); setAddModuleCourseId(null); moduleForm.reset() },
+    onError: (e) => alert('Failed to create module: ' + e.message)
   })
 
   const toggleModuleMutation = useMutation({

@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Calendar, GripVertical, MoreHorizontal, Trash2, Edit2 } from 'lucide-react'
+import { Calendar, GripVertical, Trash2, Edit2, CheckCircle2, Circle } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { cn, formatDate, isOverdue } from '@/lib/utils'
 
@@ -14,6 +14,7 @@ interface Task {
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   dueDate?: string | null
   showOnCalendar: boolean
+  completedAt?: string | null
 }
 
 const priorityConfig = {
@@ -37,7 +38,7 @@ export function KanbanCard({ task, onEdit, isDragging }: Props) {
   })
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
   }
 
@@ -46,16 +47,28 @@ export function KanbanCard({ task, onEdit, isDragging }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['boards'] }),
   })
 
+  const completeMutation = useMutation({
+    mutationFn: (completedAt: string | null) => 
+      fetch(`/api/tasks/${task.id}`, { 
+        method: 'PATCH', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ completedAt }) 
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['boards'] }),
+  })
+
   const priority = priorityConfig[task.priority] ?? priorityConfig.MEDIUM
-  const overdue = task.dueDate ? isOverdue(task.dueDate) : false
+  const overdue = task.dueDate && !task.completedAt ? isOverdue(task.dueDate) : false
+  const isCompleted = !!task.completedAt
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'glass rounded-xl p-3 cursor-default group border border-border/50 hover:border-primary/30 transition-all duration-200 hover:glow-primary',
-        (isDragging || isSortableDragging) && 'opacity-40 scale-105 rotate-1'
+        'glass rounded-xl p-3 cursor-default group border border-border/50 hover:border-primary/30 transition-all duration-200 hover:glow-primary relative',
+        (isDragging || isSortableDragging) && 'opacity-40 scale-105 rotate-1',
+        isCompleted && 'opacity-70 grayscale-[0.5]'
       )}
     >
       <div className="flex items-start gap-2">
@@ -70,9 +83,19 @@ export function KanbanCard({ task, onEdit, isDragging }: Props) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-medium leading-snug">{task.title}</p>
-            {/* Actions */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              <button
+                onClick={() => completeMutation.mutate(isCompleted ? null : new Date().toISOString())}
+                className={cn('flex-shrink-0 mt-0.5 transition-colors', isCompleted ? 'text-green-500' : 'text-muted-foreground hover:text-primary')}
+              >
+                {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+              </button>
+              <p className={cn('text-sm font-medium leading-snug', isCompleted && 'line-through text-muted-foreground')}>
+                {task.title}
+              </p>
+            </div>
+            {/* Actions - Always visible on small screens, hover on large */}
+            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0 bg-background/50 backdrop-blur-sm sm:bg-transparent rounded-lg">
               <button onClick={onEdit} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
                 <Edit2 className="w-3 h-3" />
               </button>
@@ -86,12 +109,14 @@ export function KanbanCard({ task, onEdit, isDragging }: Props) {
           </div>
 
           {task.description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
+            <p className={cn('text-xs mt-1 line-clamp-2', isCompleted ? 'text-muted-foreground/50 line-through' : 'text-muted-foreground')}>
+              {task.description}
+            </p>
           )}
 
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {/* Priority badge */}
-            <span className={cn('text-[10px] border rounded-full px-2 py-0.5 font-medium', priority.class)}>
+            <span className={cn('text-[10px] border rounded-full px-2 py-0.5 font-medium', isCompleted ? 'bg-secondary text-muted-foreground border-transparent' : priority.class)}>
               {priority.label}
             </span>
 
@@ -105,7 +130,7 @@ export function KanbanCard({ task, onEdit, isDragging }: Props) {
 
             {/* Calendar indicator */}
             {task.showOnCalendar && (
-              <span className="text-[10px] text-blue-400 flex items-center gap-1">
+              <span className={cn('text-[10px] flex items-center gap-1', isCompleted ? 'text-muted-foreground' : 'text-blue-400')}>
                 <Calendar className="w-3 h-3" /> Synced
               </span>
             )}

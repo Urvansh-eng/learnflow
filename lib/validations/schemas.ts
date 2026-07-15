@@ -18,6 +18,7 @@ export const createTaskSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
   dueDate: z.string().datetime().optional().nullable(),
   showOnCalendar: z.boolean().default(false),
+  completedAt: z.string().datetime().optional().nullable(),
 })
 
 export const updateTaskSchema = createTaskSchema.partial().omit({ columnId: true })

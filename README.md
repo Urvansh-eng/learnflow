@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LearnFlow — Personal Learning & Productivity Hub
 
-## Getting Started
+LearnFlow is a comprehensive productivity and learning management application designed to help you manage tasks, track courses and certificates, save resources, and stay organized. It also features an integrated AI assistant to help you control everything and boost your productivity.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Task Management**: Keep track of your daily tasks with a Kanban board (`@dnd-kit`).
+- **Calendar & Scheduling**: View and schedule tasks or learning sessions using an interactive calendar (`@fullcalendar`).
+- **Course & Certificate Tracking**: Log and manage your ongoing courses and earned certificates.
+- **Resource Hub**: Save and organize useful links and learning resources.
+- **AI Assistant**: Integrated Google Generative AI to provide smart insights and help manage your tasks.
+- **Authentication**: Secure passwordless/magic link authentication powered by NextAuth.js and Resend/Nodemailer.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 💻 Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This project is built with a modern web development stack, utilizing the following technologies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Core Framework & Language
+- **[Next.js](https://nextjs.org/)** (v15/16 App Router) - React framework for building fast and scalable web applications.
+- **[TypeScript](https://www.typescriptlang.org/)** - Strongly typed programming language that builds on JavaScript.
 
-## Learn More
+### UI & Styling
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework for rapid UI development.
+- **[Radix UI](https://www.radix-ui.com/)** - Unstyled, accessible UI components for building high-quality design systems.
+- **[Lucide React](https://lucide.dev/)** - Beautiful & consistent icon set.
+- **[Recharts](https://recharts.org/)** - A composable charting library built on React components.
 
-To learn more about Next.js, take a look at the following resources:
+### State Management & Data Fetching
+- **[Zustand](https://zustand-demo.pmnd.rs/)** - A small, fast, and scalable bearbones state-management solution.
+- **[React Query](https://tanstack.com/query/latest)** - Powerful asynchronous state management for React.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Database & ORM
+- **[Prisma](https://www.prisma.io/)** - Next-generation Node.js and TypeScript ORM.
+- **[PostgreSQL](https://www.postgresql.org/)** - Powerful, open-source object-relational database system (accessed via `pg` and `@prisma/adapter-pg`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Authentication
+- **[NextAuth.js (Auth.js)](https://authjs.dev/)** - Authentication for Next.js, configured with `@auth/prisma-adapter`.
+- **Nodemailer** - Used for sending magic-link emails for secure passwordless logins.
 
-## Deploy on Vercel
+### Forms & Validation
+- **[React Hook Form](https://react-hook-form.com/)** - Performant, flexible, and extensible forms with easy-to-use validation.
+- **[Zod](https://zod.dev/)** - TypeScript-first schema declaration and validation library.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Advanced Features
+- **[@google/generative-ai](https://ai.google.dev/)** - Integration with Google's Gemini models for AI assistance.
+- **[@dnd-kit](https://dndkit.com/)** - A lightweight, modular, performant, accessible drag & drop toolkit for React (used for the Kanban board).
+- **[FullCalendar](https://fullcalendar.io/)** - Full-sized drag & drop event calendar.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ Getting Started
+
+### Prerequisites
+- Node.js (v20+ recommended)
+- PostgreSQL database (local or cloud-hosted)
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd todo
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables:**
+   Create a `.env.local` file in the root directory and add the necessary environment variables (Database URL, NextAuth Secret, Email server config, Google AI API Key, etc.).
+
+4. **Initialize the Database:**
+   Push the Prisma schema to your PostgreSQL database and generate the Prisma Client:
+   ```bash
+   npx prisma db push
+   npx prisma generate
+   ```
+
+5. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+6. **Open the app:**
+   Navigate to [http://localhost:3000](http://localhost:3000) in your browser to see the application running.
+
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
+
+## 📝 License
+This project is private and intended for personal/internal use.

@@ -34,8 +34,9 @@ export default function CertificatesPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: any) =>
-      fetch('/api/certificates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, resumeUrl: data.resumeUrl || null, targetDate: data.targetDate ? new Date(data.targetDate).toISOString() : null }) }).then((r) => r.json()),
+      fetch('/api/certificates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, resumeUrl: data.resumeUrl || null, targetDate: data.targetDate ? new Date(data.targetDate).toISOString() : null }) }).then(async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json() }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['certificates'] }); setAddOpen(false); reset() },
+    onError: (e) => alert('Failed to create certificate: ' + e.message)
   })
 
   const updateStatusMutation = useMutation({

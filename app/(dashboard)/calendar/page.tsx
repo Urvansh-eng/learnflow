@@ -2,10 +2,12 @@
 
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import FullCalendar from '@fullcalendar/react'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import interactionPlugin from '@fullcalendar/interaction'
+import dynamic from 'next/dynamic'
+
+const CalendarWrapper = dynamic(() => import('./CalendarWrapper'), {
+  ssr: false,
+  loading: () => <div className="h-[600px] flex items-center justify-center bg-secondary/20 rounded-xl animate-pulse"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+})
 import { X, Loader2 } from 'lucide-react'
 
 interface CalEvent {
@@ -68,9 +70,8 @@ export default function CalendarPage() {
       </div>
 
       <div className="glass rounded-2xl p-5">
-        <FullCalendar
+        <CalendarWrapper
           ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           headerToolbar={{
             left: 'prev,next today',
