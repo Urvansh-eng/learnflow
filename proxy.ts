@@ -1,18 +1,21 @@
-import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function proxy(request: NextRequest) {
-  const session = await auth()
-  const isLoggedIn = !!session?.user
   const { pathname } = request.nextUrl
 
   const publicPaths = ['/login', '/verify-request', '/api/auth', '/api/sync']
   const isPublic = publicPaths.some((p) => pathname.startsWith(p))
 
-  if (!isLoggedIn && !isPublic) {
-    const loginUrl = new URL('/login', request.url)
-    return NextResponse.redirect(loginUrl)
+  if (!isPublic) {
+    // NextAuth v5 JWT cookie — "authjs.session-token" on HTTP, "__Secure-authjs.session-token" on HTTPS
+    const sessionToken =
+      request.cookies.get('authjs.session-token') ||
+      request.cookies.get('__Secure-authjs.session-token')
+
+    if (!sessionToken) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
   }
 
   return NextResponse.next()
