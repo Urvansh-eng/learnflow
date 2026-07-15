@@ -18,14 +18,11 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-import { auth } from '@/lib/auth'
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth()
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <Providers session={session}>{children}</Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
